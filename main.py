@@ -51,8 +51,22 @@ async def handler(event):
         print(f"Найдена ссылка! Отправляю в {DESTINATION_CHANNEL}...")
         
         try:
-            # ОТПРАВЛЯЕМ КАК СВОЁ СООБЩЕНИЕ (без пометки "Переслано от")
-            await client.send_message(DESTINATION_CHANNEL, event.message)
+            # Если в сообщении есть картинка или видео
+            if event.message.media:
+                await client.send_file(
+                    DESTINATION_CHANNEL,
+                    event.message.media,
+                    caption=event.message.text,
+                    caption_entities=event.message.entities
+                )
+            # Если это просто текст (как на твоем скриншоте)
+            else:
+                await client.send_message(
+                    DESTINATION_CHANNEL,
+                    event.message.text,
+                    entities=event.message.entities
+                )
+            
             last_forward_time = current_time
             print("Успешно отправлено!")
         except Exception as e:
@@ -60,7 +74,6 @@ async def handler(event):
 
 async def main():
     print("Запуск бота на Bothost...")
-    # Запускаем клиент. Если файл .session загружен, ввод данных не потребуется.
     await client.start()
     print("Бот успешно запущен и слушает новые сообщения!")
     await client.run_until_disconnected()
