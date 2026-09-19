@@ -15,7 +15,7 @@ SOURCE_CHATS = [chat.strip() for chat in SOURCE_CHATS_RAW.split(",") if chat.str
 SESSION_NAME = "parser_session" # Имя файла сессии
 
 # Ключевые слова
-KEYWORDS = ['roblox.com/share']
+KEYWORDS = ['roblox.com/share','тык']
 
 # ================= ЛОГИКА =================
 client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
