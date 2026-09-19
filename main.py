@@ -35,12 +35,14 @@ async def handler(event):
     # 2. Проверяем скрытые ссылки (когда ссылка спрятана за словом "тык", "тут" и т.д.)
     if event.message.entities:
         for entity in event.message.entities:
+            # Проверяем, является ли сущность скрытой ссылкой
             if isinstance(entity, MessageEntityTextUrl):
+                # Проверяем, ведет ли эта скрытая ссылка на Roblox
                 if entity.url and 'roblox.com/share' in entity.url.lower():
                     has_roblox_link = True
                     break
 
-    # Если нашли ссылку (видимую или скрытую) - отправляем
+    # Если нашли ссылку (видимую или скрытую) - пересылаем
     if has_roblox_link:
         current_time = time.time()
         
@@ -48,15 +50,14 @@ async def handler(event):
         if current_time - last_forward_time < COOLDOWN_SECONDS:
             return
 
-        print(f"Найдена ссылка! Отправляю в {DESTINATION_CHANNEL}...")
+        print(f"Найдена ссылка! Пересылаю в {DESTINATION_CHANNEL}...")
         
         try:
-            # ОТПРАВЛЯЕМ КАК СВОЁ СООБЩЕНИЕ (без пометки "Переслано от")
-            await client.send_message(DESTINATION_CHANNEL, event.message)
+            await event.message.forward_to(DESTINATION_CHANNEL)
             last_forward_time = current_time
-            print("Успешно отправлено!")
+            print("Успешно переслано!")
         except Exception as e:
-            print(f"Ошибка при отправке: {e}")
+            print(f"Ошибка при пересылке: {e}")
 
 async def main():
     print("Запуск бота на Bothost...")
