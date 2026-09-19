@@ -1,7 +1,8 @@
 import os
 import asyncio
-from telethon import TelegramClient, events
 import time
+from telethon import TelegramClient, events
+from telethon.tl.types import MessageEntityTextUrl
 
 # ================= НАСТРОЙКИ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ =================
 API_ID = int(os.environ.get("API_ID", 0))
@@ -14,9 +15,6 @@ SOURCE_CHATS = [chat.strip() for chat in SOURCE_CHATS_RAW.split(",") if chat.str
 
 SESSION_NAME = "parser_session" # Имя файла сессии
 
-# Ключевые слова
-KEYWORDS = ['roblox.com/share','тык']
-
 # ================= ЛОГИКА =================
 client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
@@ -27,18 +25,32 @@ COOLDOWN_SECONDS = 30
 async def handler(event):
     global last_forward_time
     
-    message_text = event.message.message
-    if not message_text:
-        return
+    message_text = event.message.message or ""
+    has_roblox_link = False
 
-    text_lower = message_text.lower()
-    
-    if any(keyword.lower() in text_lower for keyword in KEYWORDS):
+    # 1. Проверяем обычный текст (если ссылка написана прямо в сообщении)
+    if 'roblox.com/share' in message_text.lower():
+        has_roblox_link = True
+
+    # 2. Проверяем скрытые ссылки (когда ссылка спрятана за словом "тык", "тут" и т.д.)
+    if event.message.entities:
+        for entity in event.message.entities:
+            # Проверяем, является ли сущность скрытой ссылкой
+            if isinstance(entity, MessageEntityTextUrl):
+                # Проверяем, ведет ли эта скрытая ссылка на Roblox
+                if entity.url and 'roblox.com/share' in entity.url.lower():
+                    has_roblox_link = True
+                    break
+
+    # Если нашли ссылку (видимую или скрытую) - пересылаем
+    if has_roblox_link:
         current_time = time.time()
+        
+        # Проверка задержки (чтобы не спамить)
         if current_time - last_forward_time < COOLDOWN_SECONDS:
             return
 
-        print(f"Найдено совпадение! Пересылаю в {DESTINATION_CHANNEL}...")
+        print(f"Найдена ссылка! Пересылаю в {DESTINATION_CHANNEL}...")
         
         try:
             await event.message.forward_to(DESTINATION_CHANNEL)
